@@ -6,9 +6,9 @@ import os
 ########################################################################
 webCamFeed = True
 pathImage = "doc.png"
-cap = cv2.VideoCapture(0)
-heightImg = 640
-widthImg  = 480
+cap = cv2.VideoCapture(1)
+heightImg = 960
+widthImg  = 720
 ########################################################################
 
 utlis.initializeTrackbars()
@@ -20,7 +20,7 @@ while True:
     else:
         img = cv2.imread(pathImage)
     if img is None:
-        print("Ошибка: изображение не получено")
+        print("Error: image not received")
         break
 
     img = cv2.resize(img, (widthImg, heightImg)) # RESIZE IMAGE
@@ -38,7 +38,6 @@ while True:
     imgBigContour = img.copy() # COPY IMAGE FOR DISPLAY PURPOSES
     contours, hierarchy = cv2.findContours(imgThreshold, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE) # FIND ALL CONTOURS
     cv2.drawContours(imgContours, contours, -1, (0, 255, 0), 10) # DRAW ALL DETECTED CONTOURS
-
 
     # FIND THE BIGGEST CONTOUR
     imgWarpColored = None
@@ -63,16 +62,13 @@ while True:
         imgAdaptiveThresh=cv2.medianBlur(imgAdaptiveThresh, 3)
 
         # Image Array for Display
-        imageArray = ([img,imgGray,imgThreshold,imgContours],
-                      [imgBigContour, imgWarpColored, imgWarpGray, imgAdaptiveThresh])
+        imageArray = [[img, imgAdaptiveThresh, imgBigContour]]
 
     else:
-        imageArray = ([img,imgGray,imgThreshold,imgContours],
-                      [imgBlank, imgBlank, imgBlank, imgBlank])
+        imageArray = [[img, imgBlank, imgContours]]
 
     # LABELS FOR DISPLAY
-    labels = [["Original","Gray","Threshold","Contours"],
-              ["Biggest Contour","Warp Perspective","Warp Gray","Adaptive Threshold"]]
+    labels = [["Original", "Scanned", "Contours"]]
 
     stackedImage = utlis.stackImages(imageArray,0.75,labels)
     cv2.imshow("Result",stackedImage)
@@ -81,9 +77,8 @@ while True:
     k=cv2.waitKey(1)
     if k & 0xFF == ord('s'):
         if imgWarpColored is not None:
-            os.makedirs("Scanned", exist_ok=True)
-
-            cv2.imwrite("Scanned/myImage"+str(count)+".jpg",imgWarpColored)
+            os.makedirs("scanned", exist_ok=True)
+            cv2.imwrite("scanned/myImage"+str(count)+".jpg",imgWarpColored)
             cv2.rectangle(stackedImage, ((int(stackedImage.shape[1] / 2) - 230), int(stackedImage.shape[0] / 2) + 50),
                           (1100, 350), (0, 255, 0), cv2.FILLED)
             cv2.putText(stackedImage, "Scan Saved", (int(stackedImage.shape[1] / 2) - 200, int(stackedImage.shape[0] / 2)),
