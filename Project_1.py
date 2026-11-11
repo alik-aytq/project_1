@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 import utlis
-
+import os
 
 ########################################################################
 webCamFeed = True
@@ -15,9 +15,14 @@ utlis.initializeTrackbars()
 count=0
 
 while True:
+    if webCamFeed:
+        success, img = cap.read()
+    else:
+        img = cv2.imread(pathImage)
+    if img is None:
+        print("Ошибка: изображение не получено")
+        break
 
-    if webCamFeed:success, img = cap.read()
-    else:img = cv2.imread(pathImage)
     img = cv2.resize(img, (widthImg, heightImg)) # RESIZE IMAGE
     imgBlank = np.zeros((heightImg,widthImg, 3), np.uint8) # CREATE A BLANK IMAGE FOR TESTING
     imgGray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) # CONVERT IMAGE TO GRAY SCALE
@@ -36,6 +41,7 @@ while True:
 
 
     # FIND THE BIGGEST CONTOUR
+    imgWarpColored = None
     biggest, maxArea = utlis.biggestContour(contours) # FIND THE BIGGEST CONTOUR
     if biggest.size != 0:
         biggest=utlis.reorder(biggest)
@@ -74,14 +80,19 @@ while True:
     # SAVE IMAGE WHEN 's' key is pressed
     k=cv2.waitKey(1)
     if k & 0xFF == ord('s'):
-        cv2.imwrite("Scanned/myImage"+str(count)+".jpg",imgWarpColored)
-        cv2.rectangle(stackedImage, ((int(stackedImage.shape[1] / 2) - 230), int(stackedImage.shape[0] / 2) + 50),
-                      (1100, 350), (0, 255, 0), cv2.FILLED)
-        cv2.putText(stackedImage, "Scan Saved", (int(stackedImage.shape[1] / 2) - 200, int(stackedImage.shape[0] / 2)),
-                    cv2.FONT_HERSHEY_DUPLEX, 3, (0, 0, 255), 5, cv2.LINE_AA)
-        cv2.imshow('Result', stackedImage)
-        cv2.waitKey(300)
-        count += 1
+        if imgWarpColored is not None:
+            os.makedirs("Scanned", exist_ok=True)
+
+            cv2.imwrite("Scanned/myImage"+str(count)+".jpg",imgWarpColored)
+            cv2.rectangle(stackedImage, ((int(stackedImage.shape[1] / 2) - 230), int(stackedImage.shape[0] / 2) + 50),
+                          (1100, 350), (0, 255, 0), cv2.FILLED)
+            cv2.putText(stackedImage, "Scan Saved", (int(stackedImage.shape[1] / 2) - 200, int(stackedImage.shape[0] / 2)),
+                        cv2.FONT_HERSHEY_DUPLEX, 3, (0, 0, 255), 5, cv2.LINE_AA)
+            cv2.imshow('Result', stackedImage)
+            cv2.waitKey(300)
+            count += 1
+        else:
+            print("Document is not found")
 
     elif k==27:
         break
