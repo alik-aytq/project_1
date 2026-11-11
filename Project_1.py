@@ -2,12 +2,13 @@ import cv2
 import numpy as np
 import utlis
 import os
+from PIL import Image
 
 ########################################################################
 webCamFeed = True
 pathImage = "doc.png"
 cap = cv2.VideoCapture(1)
-heightImg = 960
+heightImg = 1060
 widthImg  = 720
 ########################################################################
 
@@ -41,6 +42,7 @@ while True:
 
     # FIND THE BIGGEST CONTOUR
     imgWarpColored = None
+    imgAdaptiveThresh = None
     biggest, maxArea = utlis.biggestContour(contours) # FIND THE BIGGEST CONTOUR
     if biggest.size != 0:
         biggest=utlis.reorder(biggest)
@@ -55,7 +57,7 @@ while True:
         imgWarpColored=imgWarpColored[20:imgWarpColored.shape[0] - 20, 20:imgWarpColored.shape[1] - 20]
         imgWarpColored = cv2.resize(imgWarpColored,(widthImg,heightImg))
 
-        # APPLY ADAPTIVE THRESHOLD
+        # APPLY ADAPTIVE THRESHOLD (ORIGINAL)
         imgWarpGray = cv2.cvtColor(imgWarpColored,cv2.COLOR_BGR2GRAY)
         imgAdaptiveThresh= cv2.adaptiveThreshold(imgWarpGray, 255, 1, 1, 7, 2)
         imgAdaptiveThresh = cv2.bitwise_not(imgAdaptiveThresh)
@@ -74,17 +76,35 @@ while True:
     cv2.imshow("Result",stackedImage)
 
     # SAVE IMAGE WHEN 's' key is pressed
-    k=cv2.waitKey(1)
-    if k & 0xFF == ord('s'):
-        if imgWarpColored is not None:
+    k=cv2.waitKey(1) & 0xFF
+
+    if k == ord('s'):
+        if imgAdaptiveThresh is not None:
             os.makedirs("scanned", exist_ok=True)
-            cv2.imwrite("scanned/myImage"+str(count)+".jpg",imgWarpColored)
+
+            cv2.imwrite("scanned/myImage"+str(count)+".jpg",imgAdaptiveThresh)
+
             cv2.rectangle(stackedImage, ((int(stackedImage.shape[1] / 2) - 230), int(stackedImage.shape[0] / 2) + 50),
                           (1100, 350), (0, 255, 0), cv2.FILLED)
             cv2.putText(stackedImage, "Scan Saved", (int(stackedImage.shape[1] / 2) - 200, int(stackedImage.shape[0] / 2)),
                         cv2.FONT_HERSHEY_DUPLEX, 3, (0, 0, 255), 5, cv2.LINE_AA)
             cv2.imshow('Result', stackedImage)
             cv2.waitKey(300)
+            count += 1
+        else:
+            print("Document is not found")
+
+    # SAVE DOCUMENT AS PDF
+    elif k == ord('p'):
+        if imgAdaptiveThresh is not None:
+            os.makedirs("scanned", exist_ok=True)
+
+            pdfImage = Image.fromarray(imgAdaptiveThresh)
+
+            pdfPath = "scanned/myDocument" + str(count) + ".pdf"
+            pdfImage.save(pdfPath, "PDF", resolution=100.0)
+
+            print("PDF Saved:", pdfPath)
             count += 1
         else:
             print("Document is not found")
